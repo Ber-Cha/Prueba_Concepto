@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Personas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        header {
+            background-color: #0077b6;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .form-group button {
+            background-color: #0077b6;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .form-group button:hover {
+            background-color: #005f8a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th,
+        table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #0077b6;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Gestión de Personas</h1>
+    </header>
+    <div class="container">
+        <!-- Probar Endpoint -->
+        <h2>Probar Endpoint</h2>
+        <div class="form-group">
+            <button onclick="probarEndpoint()">Probar</button>
+        </div>
+
+        <!-- Buscar Persona -->
+        <h2>Buscar Persona por ID</h2>
+        <div class="form-group">
+            <label for="personaId">ID de Persona:</label>
+            <input type="number" id="personaId" placeholder="Ingrese el ID">
+            <button onclick="buscarPersona()">Buscar</button>
+        </div>
+
+        <!-- Crear Persona -->
+        <h2>Crear Persona</h2>
+        <div class="form-group">
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" placeholder="Nombre">
+            <label for="apellido">Apellido:</label>
+            <input type="text" id="apellido" placeholder="Apellido">
+            <label for="edad">Edad:</label>
+            <input type="number" id="edad" placeholder="Edad">
+            <label for="password">Contraseña:</label>
+            <input type="password" id="password" placeholder="Contraseña">
+            <button onclick="crearPersona()">Guardar</button>
+        </div>
+
+        <!-- Listar Personas -->
+        <h2>Lista de Personas</h2>
+        <button onclick="listarPersonas()">Cargar Lista</button>
+        <table id="tablaPersonas">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Edad</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Los datos se cargarán dinámicamente -->
+            </tbody>
+        </table>
+
+        <!-- Eliminar Persona -->
+        <h2>Eliminar Persona</h2>
+        <div class="form-group">
+            <label for="deleteId">ID de Persona a eliminar:</label>
+            <input type="number" id="deleteId" placeholder="Ingrese el ID">
+            <button onclick="eliminarPersona()">Eliminar</button>
+        </div>
+    </div>
+
+    <script>
+        const baseURL = "/personas"; // URL base del controlador
+
+        // Función para probar el endpoint
+        function probarEndpoint() {
+            fetch(`${baseURL}/prueba`)
+                .then(response => response.text())
+                .then(data => alert(data))
+                .catch(error => console.error("Error al probar el endpoint:", error));
+        }
+
+        // Función para buscar persona por ID
+        function buscarPersona() {
+            const id = document.getElementById("personaId").value;
+            if (!id) {
+                alert("Ingrese un ID válido.");
+                return;
+            }
+
+            fetch(`${baseURL}/${id}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Persona no encontrada");
+                    return response.json();
+                })
+                .then(data => {
+                    alert(`Persona encontrada: ${data.pNombre} ${data.pApellido}, Edad: ${data.edad}`);
+                })
+                .catch(error => alert("Error: " + error.message));
+        }
+
+        // Función para crear una nueva persona
+        function crearPersona() {
+            const nombre = document.getElementById("nombre").value;
+            const apellido = document.getElementById("apellido").value;
+            const edad = document.getElementById("edad").value;
+            const password = document.getElementById("password").value;
+
+            if (!nombre || !apellido || !edad || !password) {
+                alert("Todos los campos son obligatorios.");
+                return;
+            }
+
+            const persona = { pNombre: nombre, pApellido: apellido, edad: parseInt(edad) };
+
+            fetch(`${baseURL}?password=${password}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(persona)
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error("Error al crear la persona");
+                    return response.json();
+                })
+                .then(() => alert("Persona creada correctamente"))
+                .catch(error => alert("Error: " + error.message));
+        }
+
+        // Función para listar personas
+        function listarPersonas() {
+            fetch(baseURL)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById("tablaPersonas").querySelector("tbody");
+                    tbody.innerHTML = data.map(persona => `
+                        <tr>
+                            <td>${persona.id}</td>
+                            <td>${persona.pNombre}</td>
+                            <td>${persona.pApellido}</td>
+                            <td>${persona.edad}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(error => console.error("Error al listar personas:", error));
+        }
+
+        // Función para eliminar una persona
+        function eliminarPersona() {
+            const id = document.getElementById("deleteId").value;
+            if (!id) {
+                alert("Ingrese un ID válido.");
+                return;
+            }
+
+            fetch(`${baseURL}/${id}`, { method: "DELETE" })
+                .then(response => {
+                    if (!response.ok) throw new Error("Error al eliminar la persona");
+                    return response.text();
+                })
+                .then(() => alert("Persona eliminada correctamente"))
+                .catch(error => alert("Error: " + error.message));
+        }
+    </script>
+</body>
+
+</html>
