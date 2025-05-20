@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,12 +64,12 @@ public class CrudController {
 
         PersonasDto persona = personaOpt.get();
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
         // Enviar a Kafka usando el servicio de auditoría
-        kafkaProducerService.sendAuditLog(
-            persona.getPNombre()+" "+persona.getPApellido(), // usuario
-            "CONSULTA", // acción
-            "Consulta realizada para persona con ID: " + id + " - Nombre: " + persona.getPNombre() // detalles
-        );
+        kafkaProducerService.sendAuditLog(username, // usuario
+                "CONSULTA", // acción
+                "Consulta realizada para persona con ID: " + id + " - Nombre: " + persona.getPNombre());
 
         return ResponseEntity.ok(persona);
     }
@@ -81,6 +83,15 @@ public class CrudController {
             Mensaje error = new Mensaje("No se encontraron personas");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+        // Enviar a Kafka usando el servicio de auditoría
+        kafkaProducerService.sendAuditLog(username, // usuario
+                "CONSULTA", // acción
+                "Consulta realizada para todas las personas" // detalles
+        );
+
         return ResponseEntity.ok(personas);
     }
 
@@ -88,12 +99,23 @@ public class CrudController {
     @DeleteMapping("delete/{id}")
     public ResponseEntity<?> deletePersona(@PathVariable Integer id) {
         Optional<PersonasDto> personaOpt = personaService.get(id);
+        PersonasDto persona = personaOpt.get();
+
         if (personaOpt.isPresent()) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+            // Enviar a Kafka usando el servicio de auditoría
+            kafkaProducerService.sendAuditLog(username, // usuario
+                    "ELIMINACION", // acción
+                    "Registro de persona eliminado con ID: " + id + " - Nombre: " + persona.getPNombre() // detalles
+            );
+
             personaService.delete(id);
             return ResponseEntity.ok(new Mensaje("Persona eliminada correctamente"));
         }
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new Mensaje("Persona no encontrada con ID: " + id));
+                .body(new Mensaje("Persona no encontrada con ID: " + id));
     }
 
     @SwaggerDocumentation(summary = "Buscar personas por identificación")
@@ -102,8 +124,17 @@ public class CrudController {
         List<PersonasDto> personas = personaService.findByIdentificacion(identificacion);
         if (personas.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new Mensaje("No se encontraron personas con identificación: " + identificacion));
+                    .body(new Mensaje("No se encontraron personas con identificación: " + identificacion));
         }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+        // Enviar a Kafka usando el servicio de auditoría
+        kafkaProducerService.sendAuditLog(username, // usuario
+                "CONSULTA", // acción
+                "Consulta realizada para usuarios con identificación: " + identificacion// detalles
+        );
+
         return ResponseEntity.ok(personas);
     }
 
@@ -113,8 +144,15 @@ public class CrudController {
         List<PersonasDto> personas = personaService.findByPNombre(pNombre);
         if (personas.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new Mensaje("No se encontraron personas con nombre: " + pNombre));
+                    .body(new Mensaje("No se encontraron personas con nombre: " + pNombre));
         }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+        // Enviar a Kafka usando el servicio de auditoría
+        kafkaProducerService.sendAuditLog(username, // usuario
+                "CONSULTA", // acción
+                "Consulta realizada para usuarios con primer nombre: " + pNombre// detalles
+        );
         return ResponseEntity.ok(personas);
     }
 
@@ -124,8 +162,15 @@ public class CrudController {
         List<PersonasDto> personas = personaService.findByPApellido(pApellido);
         if (personas.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new Mensaje("No se encontraron personas con apellido: " + pApellido));
+                    .body(new Mensaje("No se encontraron personas con apellido: " + pApellido));
         }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+        // Enviar a Kafka usando el servicio de auditoría
+        kafkaProducerService.sendAuditLog(username, // usuario
+                "CONSULTA", // acción
+                "Consulta realizada para usuarios con primer apellido: " + pApellido// detalles
+        );
         return ResponseEntity.ok(personas);
     }
 
@@ -135,8 +180,15 @@ public class CrudController {
         List<PersonasDto> personas = personaService.findByEdad(edad);
         if (personas.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new Mensaje("No se encontraron personas con edad: " + edad));
+                    .body(new Mensaje("No se encontraron personas con edad: " + edad));
         }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+        // Enviar a Kafka usando el servicio de auditoría
+        kafkaProducerService.sendAuditLog(username, // usuario
+                "CONSULTA", // acción
+                "Consulta realizada para usuarios con edad: " + edad// detalles
+        );
         return ResponseEntity.ok(personas);
     }
 
@@ -147,10 +199,18 @@ public class CrudController {
         try {
             personaDto.setId(id); // Establecemos el ID del PathVariable en el DTO
             PersonasDto personaActualizada = personaService.update(personaDto);
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+            String usuarioActualizado = usuarioService.getByPersonaId(personaActualizada.getId()).getId().getLogin();
+            // Enviar a Kafka usando el servicio de auditoría
+            kafkaProducerService.sendAuditLog(username, // usuario
+                    "ACTUALIZACIÓN", // acción
+                    "Actualización efectutuada a persona con usuario: " + usuarioActualizado);
             return ResponseEntity.ok(personaActualizada);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new Mensaje("Persona no encontrada con ID: " + id));
+                    .body(new Mensaje("Persona no encontrada con ID: " + id));
         }
     }
 
@@ -160,10 +220,30 @@ public class CrudController {
      */
     @SwaggerDocumentation(summary = "Actualizar contraseña de persona")
     @PutMapping("/{id}/password")
-    public boolean actualizarPassword(@PathVariable Integer id, @RequestBody PasswordUpdateRequest request) {
-        String newPassword = request.getNewpassword();
-        LOGGER.info("Contrasenia: " + newPassword + " Id: " + id);
-        return usuarioService.updatePassword(request.getLogin(), id, newPassword);
-    }
+    public ResponseEntity<?> actualizarPassword(@PathVariable Integer id, @RequestBody PasswordUpdateRequest request) {
 
+        try {
+            String newPassword = request.getNewpassword();
+            LOGGER.info("Contrasenia: " + newPassword + " Id: " + id);
+
+            boolean resultado = usuarioService.updatePassword(request.getLogin(), id, request.getNewpassword());
+
+            if (!resultado) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("No se pudo actualizar la contraseña. Verifica los datos.");
+            }
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente el username)
+            String usuarioActualizado = usuarioService.getByPersonaId(id).getId().getLogin();
+            // Enviar a Kafka usando el servicio de auditoría
+            kafkaProducerService.sendAuditLog(username, // usuario
+                    "ACTUALIZACIÓN", // acción
+                    "Actualización de contraseña efectutuada a persona con usuario: " + usuarioActualizado);
+            return ResponseEntity.ok("Contraseña Actualizada Correctamente");
+        } catch (Exception ex) {
+            LOGGER.error("Error al actualizar contraseña", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al procesar la solicitud: " + ex.getMessage()); // 🔥 Detalles del error
+        }
+    }
 }

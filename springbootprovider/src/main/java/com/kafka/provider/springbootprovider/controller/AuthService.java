@@ -1,8 +1,11 @@
 package com.kafka.provider.springbootprovider.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +21,7 @@ import com.kafka.provider.springbootprovider.dto.LoginRequest;
 import com.kafka.provider.springbootprovider.dto.RegistroRequest;
 import com.kafka.provider.springbootprovider.repository.IPersonaRepository;
 import com.kafka.provider.springbootprovider.repository.IUsuarioRepository;
+import com.kafka.provider.springbootprovider.service.KafkaProducerService;
 import com.kafka.provider.springbootprovider.service_impl.ApiKeyGenerator;
 
 import lombok.RequiredArgsConstructor;
@@ -35,7 +39,8 @@ public class AuthService {
         private final JwtService jwtService;
         private final IPersonaRepository personaRepository;
         private final AuthenticationManager authenticationManager;
-
+        @Autowired
+        private KafkaProducerService kafkaProducerService;
         Logger log;
         private final ActiveTokenService activeTokenService;
 
@@ -129,7 +134,17 @@ public class AuthService {
                                         .get();
                         // Generar token JWT
                         String token = jwtService.getToken(userDetails);
-                        System.out.println("funciona hasta aquí 6");
+
+                        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                        String username = authentication.getName(); // Esto devuelve el "subject" del JWT (normalmente
+                                                                    // el username)
+
+                        // Enviar a Kafka usando el servicio de auditoría
+                        kafkaProducerService.sendAuditLog(username, // usuario
+                                        "CREAR", // acción
+                                        "Creación de persona con usuario: "
+                                                        + usuario.getId().getLogin());
+
                         return AuthResponse.builder()
                                         .token(token)
                                         .message("Usuario registrado exitosamente. Login: " + usuario.getId().getLogin()

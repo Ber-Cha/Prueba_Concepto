@@ -26,10 +26,10 @@ public class PersonaServiceImpl implements IPersonaService {
     private IUsuarioRepository usuarioRepository;
 
     @Override
-        public Optional<PersonasDto> get(Integer id) {
-    return personaRepository.findById(id)
-        .map(this::convertToDto); // Si no se encuentra, devuelve Optional.empty()
-}
+    public Optional<PersonasDto> get(Integer id) {
+        return personaRepository.findById(id)
+                .map(this::convertToDto); // Si no se encuentra, devuelve Optional.empty()
+    }
 
     @Override
     public PersonasDto update(PersonasDto personaDto) {
@@ -66,7 +66,18 @@ public class PersonaServiceImpl implements IPersonaService {
         }
 
         if (personaDto.getFechanacimiento() != null) {
+
             personaBD.setFechanacimiento(personaDto.getFechanacimiento());
+
+            LocalDate today = LocalDate.now();
+
+            Period period = Period.between(personaDto.getFechanacimiento(), today);
+            int edad = period.getYears();
+            String edadClinica = period.getYears() + " años " + period.getMonths() + " meses "
+                    + period.getDays()
+                    + " días";
+            personaBD.setEdad(edad);
+            personaBD.setEdadclinica(edadClinica);
         }
 
         if (personaDto.getEdad() != 0) {
@@ -81,12 +92,10 @@ public class PersonaServiceImpl implements IPersonaService {
             personaBD.setUbicacion(personaDto.getUbicacion());
         }
 
-
         Persona P_Actualizada = personaRepository.save(personaBD);
 
         return convertToDto(P_Actualizada);
     }
-
 
     @Override
     public void delete(Integer id) {
@@ -94,47 +103,45 @@ public class PersonaServiceImpl implements IPersonaService {
         personaRepository.deleteById(id);
     }
 
-
     @Override
     public List<PersonasDto> findAll() {
         return personaRepository.findAll()
-            .stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
-    
 
     @Override
     public List<PersonasDto> findByIdentificacion(Integer identificacion) {
         return personaRepository.findByIdentificacion(identificacion)
-            .stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
 
     }
 
     @Override
     public List<PersonasDto> findByEdad(Integer edad) {
         return personaRepository.findByEdad(edad)
-        .stream()
-        .map(this::convertToDto)
-        .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<PersonasDto> findByPApellido(String pApellido) {
         return personaRepository.findBypApellido(pApellido)
-            .stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<PersonasDto> findByPNombre(String pNombre) {
         return personaRepository.findBypNombre(pNombre)
-            .stream()
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     private PersonasDto convertToDto(Persona persona) {
@@ -152,6 +159,5 @@ public class PersonaServiceImpl implements IPersonaService {
                 .Ubicacion(persona.getUbicacion())
                 .build();
     }
-    
 
 }

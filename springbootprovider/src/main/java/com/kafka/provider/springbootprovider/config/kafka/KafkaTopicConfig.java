@@ -1,4 +1,4 @@
-package com.kafka.provider.springbootprovider.config;
+package com.kafka.provider.springbootprovider.config.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,6 @@ public class KafkaTopicConfig {
         return TopicBuilder.name("audit-log")
                 .partitions(1)
                 .replicas(1)
-                .configs(configurations)
                 .build();
     }
 }

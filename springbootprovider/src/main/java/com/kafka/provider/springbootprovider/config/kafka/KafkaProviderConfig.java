@@ -1,4 +1,4 @@
-package com.kafka.provider.springbootprovider.config;
+package com.kafka.provider.springbootprovider.config.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,4 +63,3 @@ public class KafkaProviderConfig {
         return new KafkaTemplate<>(producerFactory());
     }
 }
-
